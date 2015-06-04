@@ -110576,188 +110576,6 @@ ol.interaction.Snap.sortByDistance = function(a, b) {
       this.pixelCoordinate_, b.segment);
 };
 
-// FIXME draw drag box
-goog.provide('ol.TouchDragBoxEvent');
-goog.provide('ol.interaction.TouchDragBox');
-
-goog.require('goog.events.Event');
-goog.require('ol');
-goog.require('ol.events.ConditionType');
-goog.require('ol.events.condition');
-goog.require('ol.interaction.Pointer');
-goog.require('ol.render.Box');
-
-/**
- * @enum {string}
- */
-ol.TouchDragBoxEventType = {
-  /**
-   * Triggered upon drag box start.
-   * @event ol.DragBoxEvent#boxstart
-   * @api stable
-   */
-  BOXSTART: 'boxstart',
-  /**
-   * Triggered upon drag box end.
-   * @event ol.DragBoxEvent#boxend
-   * @api stable
-   */
-  BOXEND: 'boxend'
-};
-
-
-
-/**
- * @classdesc
- * Events emitted by {@link ol.interaction.TouchDragBox} instances are instances of
- * this type.
- *
- * @param {string} type The event type.
- * @param {ol.Coordinate} coordinate The event coordinate.
- * @extends {goog.events.Event}
- * @constructor
- * @implements {oli.DragBoxEvent}
- */
-ol.TouchDragBoxEvent = function(type, coordinate) {
-  goog.base(this, type);
-
-  /**
-   * The coordinate of the drag event.
-   * @const
-   * @type {ol.Coordinate}
-   * @api stable
-   */
-  this.coordinate = coordinate;
-
-};
-goog.inherits(ol.TouchDragBoxEvent, goog.events.Event);
-
-
-
-/**
- * @classdesc
- * Allows the user to draw a vector box by clicking and dragging on the map,
- * normally combined with an {@link ol.events.condition} that limits
- * it to when the shift or other key is held down. This is used, for example,
- * for zooming to a specific area of the map
- * (see {@link ol.interaction.DragZoom} and
- * {@link ol.interaction.DragRotateAndZoom}).
- *
- * This interaction is only supported for mouse devices.
- *
- * @constructor
- * @extends {ol.interaction.Pointer}
- * @fires ol.DragBoxEvent
- * @param {olx.interaction.DragBoxOptions=} opt_options Options.
- * @api stable
- */
-ol.interaction.TouchDragBox = function(opt_options) {
-
-  goog.base(this, {
-    handleDownEvent: ol.interaction.TouchDragBox.handleDownEvent_,
-    handleDragEvent: ol.interaction.TouchDragBox.handleDragEvent_,
-    handleUpEvent: ol.interaction.TouchDragBox.handleUpEvent_
-  });
-
-  var options = goog.isDef(opt_options) ? opt_options : {};
-
-  /**
-   * @private
-   * @type {ol.style.Style}
-   */
-  var style = goog.isDef(options.style) ? options.style : null;
-
-  /**
-   * @type {ol.render.Box}
-   * @private
-   */
-  this.box_ = new ol.render.Box(style);
-
-  /**
-   * @type {ol.Pixel}
-   * @private
-   */
-  this.startPixel_ = null;
-
-  /**
-   * @private
-   * @type {ol.events.ConditionType}
-   */
-  this.condition_ = goog.isDef(options.condition) ?
-      options.condition : ol.events.condition.always;
-
-};
-goog.inherits(ol.interaction.TouchDragBox, ol.interaction.Pointer);
-
-
-/**
- * @param {ol.MapBrowserPointerEvent} mapBrowserEvent Event.
- * @this {ol.interaction.TouchDragBox}
- * @private
- */
-ol.interaction.TouchDragBox.handleDragEvent_ = function(mapBrowserEvent) {
-  this.box_.setMap(mapBrowserEvent.map);
-  this.box_.setPixels(this.startPixel_, mapBrowserEvent.pixel);
-};
-
-
-/**
- * Returns geometry of last drawn box.
- * @return {ol.geom.Polygon} Geometry.
- * @api stable
- */
-ol.interaction.TouchDragBox.prototype.getGeometry = function() {
-  return this.box_.getGeometry();
-};
-
-
-/**
- * To be overriden by child classes.
- * FIXME: use constructor option instead of relying on overridding.
- * @param {ol.MapBrowserEvent} mapBrowserEvent Map browser event.
- * @protected
- */
-ol.interaction.TouchDragBox.prototype.onBoxEnd = goog.nullFunction;
-
-
-/**
- * @param {ol.MapBrowserPointerEvent} mapBrowserEvent Event.
- * @return {boolean} Stop drag sequence?
- * @this {ol.interaction.TouchDragBox}
- * @private
- */
-ol.interaction.TouchDragBox.handleUpEvent_ = function(mapBrowserEvent) {
-  this.box_.setMap(null);
-
-  var deltaX = mapBrowserEvent.pixel[0] - this.startPixel_[0];
-  var deltaY = mapBrowserEvent.pixel[1] - this.startPixel_[1];
-
-  if (deltaX * deltaX + deltaY * deltaY >=
-      ol.DRAG_BOX_HYSTERESIS_PIXELS_SQUARED) {
-    this.onBoxEnd(mapBrowserEvent);
-    this.dispatchEvent(new ol.DragBoxEvent(ol.DragBoxEventType.BOXEND,
-        mapBrowserEvent.coordinate));
-  }
-  return false;
-};
-
-
-/**
- * @param {ol.MapBrowserPointerEvent} mapBrowserEvent Event.
- * @return {boolean} Start drag sequence?
- * @this {ol.interaction.TouchDragBox}
- * @private
- */
-ol.interaction.TouchDragBox.handleDownEvent_ = function(mapBrowserEvent) {
-  var browserEvent = mapBrowserEvent.browserEvent;
-  this.startPixel_ = mapBrowserEvent.pixel;
-  this.box_.setMap(mapBrowserEvent.map);
-  this.box_.setPixels(this.startPixel_, this.startPixel_);
-  this.dispatchEvent(new ol.DragBoxEvent(ol.DragBoxEventType.BOXSTART,
-      mapBrowserEvent.coordinate));
-  return true;
-};
-
 goog.provide('ol.layer.Heatmap');
 
 goog.require('goog.asserts');
@@ -117309,7 +117127,6 @@ goog.require('ol.Size');
 goog.require('ol.Sphere');
 goog.require('ol.Tile');
 goog.require('ol.TileState');
-goog.require('ol.TouchDragBoxEvent');
 goog.require('ol.View');
 goog.require('ol.ViewHint');
 goog.require('ol.ViewProperty');
@@ -117392,7 +117209,6 @@ goog.require('ol.interaction.Select');
 goog.require('ol.interaction.SelectFilterFunction');
 goog.require('ol.interaction.Snap');
 goog.require('ol.interaction.SnapProperty');
-goog.require('ol.interaction.TouchDragBox');
 goog.require('ol.layer.Base');
 goog.require('ol.layer.Group');
 goog.require('ol.layer.Heatmap');
@@ -120175,21 +119991,6 @@ goog.exportProperty(
     ol.interaction.Snap.prototype,
     'removeFeature',
     ol.interaction.Snap.prototype.removeFeature);
-
-goog.exportProperty(
-    ol.TouchDragBoxEvent.prototype,
-    'coordinate',
-    ol.TouchDragBoxEvent.prototype.coordinate);
-
-goog.exportSymbol(
-    'ol.interaction.TouchDragBox',
-    ol.interaction.TouchDragBox,
-    OPENLAYERS);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'getGeometry',
-    ol.interaction.TouchDragBox.prototype.getGeometry);
 
 goog.exportSymbol(
     'ol.geom.Circle',
@@ -126960,76 +126761,6 @@ goog.exportProperty(
     ol.interaction.Snap.prototype,
     'unByKey',
     ol.interaction.Snap.prototype.unByKey);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'getActive',
-    ol.interaction.TouchDragBox.prototype.getActive);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'setActive',
-    ol.interaction.TouchDragBox.prototype.setActive);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'get',
-    ol.interaction.TouchDragBox.prototype.get);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'getKeys',
-    ol.interaction.TouchDragBox.prototype.getKeys);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'getProperties',
-    ol.interaction.TouchDragBox.prototype.getProperties);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'set',
-    ol.interaction.TouchDragBox.prototype.set);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'setProperties',
-    ol.interaction.TouchDragBox.prototype.setProperties);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'unset',
-    ol.interaction.TouchDragBox.prototype.unset);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'changed',
-    ol.interaction.TouchDragBox.prototype.changed);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'getRevision',
-    ol.interaction.TouchDragBox.prototype.getRevision);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'on',
-    ol.interaction.TouchDragBox.prototype.on);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'once',
-    ol.interaction.TouchDragBox.prototype.once);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'un',
-    ol.interaction.TouchDragBox.prototype.un);
-
-goog.exportProperty(
-    ol.interaction.TouchDragBox.prototype,
-    'unByKey',
-    ol.interaction.TouchDragBox.prototype.unByKey);
 
 goog.exportProperty(
     ol.geom.Geometry.prototype,
